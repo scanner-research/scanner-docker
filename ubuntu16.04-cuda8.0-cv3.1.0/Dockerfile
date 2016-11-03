@@ -22,7 +22,8 @@ ADD thirdparty/cuda/libnvcuvid.so.367.48 /usr/local/cuda/lib64/libnvcuvid.so
 
 # Python dependencies
 RUN pip install --upgrade pip
-RUN pip install numpy protobuf toml youtube-dl scipy scikit-learn scikit-image
+RUN pip install numpy protobuf toml youtube-dl scipy scikit-learn scikit-image \
+    enum34 matplotlib
 
 # Non-apt-installable dependencies
 ENV deps /deps
