@@ -16,7 +16,8 @@ RUN apt-get install -y libssl-dev libcurl3-dev liblzma-dev \
     libgoogle-glog-dev libatlas-base-dev libsuitesparse-dev \
     libx264-dev libavcodec-dev libavresample-dev libavformat-dev libavfilter-dev \
     ffmpeg libpng-dev libjpeg-dev libbz2-dev cmake git python-pip wget \
-    libleveldb-dev libsnappy-dev libhdf5-serial-dev liblmdb-dev python-dev
+    libleveldb-dev libsnappy-dev libhdf5-serial-dev liblmdb-dev python-dev \
+    llvm clang
 RUN apt-get install -y --no-install-recommends libboost-all-dev
 ADD thirdparty/cuda/libnvcuvid.so.367.48 /usr/local/cuda/lib64/libnvcuvid.so
 
@@ -34,7 +35,7 @@ WORKDIR ${deps}
 RUN git clone https://github.com/opencv/opencv
 RUN git clone https://github.com/opencv/opencv_contrib
 RUN git clone https://ceres-solver.googlesource.com/ceres-solver
-RUN cd ceres-solver && mkdir build && cd build && cmake .. && make install -j
+RUN cd ceres-solver && mkdir build && cd build && cmake .. && make install
 RUN mkdir ${deps}/opencv/build && \
     cd ${deps}/opencv/build && \
     cmake -D CMAKE_BUILD_TYPE=Release -D CMAKE_INSTALL_PREFIX=/opt/opencv-3.1.0 \
@@ -42,7 +43,7 @@ RUN mkdir ${deps}/opencv/build && \
     -D CUDA_FAST_MATH=1 -D WITH_CUBLAS=1 \
     -D OPENCV_EXTRA_MODULES_PATH=${deps}/opencv_contrib/modules \
     .. && \
-    make install -j
+    make install
 ENV OpenCV_DIR /opt/opencv-3.1.0
 
 # Caffe
@@ -51,6 +52,12 @@ ADD thirdparty/caffe/Makefile.config ${deps}/caffe/Makefile.config
 RUN cd caffe && mkdir build && cd build && \
     cmake -D CMAKE_INSTALL_PREFIX=/opt/caffe -DCUDA_ARCH_NAME=Manual \
           -D CUDA_ARCH_BIN="61" -DCUDA_ARCH_PTX="61" .. && \
-    make install -j
+    make install
 ENV Caffe_DIR /opt/caffe
 ENV PYTHONPATH /opt/caffe/python
+
+# Halide
+RUN git clone https://github.com/halide/Halide
+RUN cd Halide && git checkout auto_scheduler && make distrib && \
+    cp -r distrib /opt/halide
+ENV Halide_DIR /opt/halide
