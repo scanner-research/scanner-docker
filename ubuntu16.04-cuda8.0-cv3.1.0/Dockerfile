@@ -11,40 +11,44 @@ RUN apt-get install -y software-properties-common
 RUN add-apt-repository -y ppa:george-edison55/cmake-3.x
 RUN add-apt-repository -y ppa:git-core/ppa
 RUN apt-get update
-RUN apt-get install -y libssl-dev libcurl3-dev liblzma-dev \
-    libprotobuf-dev protobuf-compiler libeigen3-dev libgflags-dev \
-    libgoogle-glog-dev libatlas-base-dev libsuitesparse-dev \
+RUN apt-get install -y libssl-dev libcurl3-dev liblzma-dev libeigen3-dev  \
+    libgoogle-glog-dev libatlas-base-dev libsuitesparse-dev libgflags-dev \
     libx264-dev libavcodec-dev libavresample-dev libavformat-dev libavfilter-dev \
     ffmpeg libpng-dev libjpeg-dev libbz2-dev cmake git python-pip wget \
     libleveldb-dev libsnappy-dev libhdf5-serial-dev liblmdb-dev python-dev \
-    llvm clang
+    llvm clang python-tk autoconf autogen libtool
 RUN apt-get install -y --no-install-recommends libboost-all-dev
 ADD thirdparty/cuda/libnvcuvid.so.367.48 /usr/local/cuda/lib64/libnvcuvid.so
 
 # Python dependencies
 RUN pip install --upgrade pip
 RUN pip install numpy protobuf toml youtube-dl scipy scikit-learn scikit-image \
-    enum34 matplotlib
+    enum34 matplotlib seaborn
 
 # Non-apt-installable dependencies
 ENV deps /deps
 RUN mkdir ${deps}
 
+# gRPC
+RUN git clone -b v1.0.0 https://github.com/grpc/grpc
+RUN cd grpc && git submodule update --init && make install && \
+    cd third_party/protobuf && make install
+
 # OpenCV
 WORKDIR ${deps}
-RUN git clone https://github.com/opencv/opencv
-RUN git clone https://github.com/opencv/opencv_contrib
+RUN git clone https://github.com/opencv/opencv && cd opencv && git checkout tags/3.2.0
+RUN git clone https://github.com/opencv/opencv_contrib && cd opencv && git checkout tags/3.2.0
 RUN git clone https://ceres-solver.googlesource.com/ceres-solver
 RUN cd ceres-solver && mkdir build && cd build && cmake .. && make install
 RUN mkdir ${deps}/opencv/build && \
     cd ${deps}/opencv/build && \
-    cmake -D CMAKE_BUILD_TYPE=Release -D CMAKE_INSTALL_PREFIX=/opt/opencv-3.1.0 \
+    cmake -D CMAKE_BUILD_TYPE=Release -D CMAKE_INSTALL_PREFIX=/opt/opencv-3.2.0 \
     -D BUILD_TESTS=OFF -D BUILD_PERF_TESTS=OFF -D ENABLE_FAST_MATH=1 \
     -D CUDA_FAST_MATH=1 -D WITH_CUBLAS=1 \
     -D OPENCV_EXTRA_MODULES_PATH=${deps}/opencv_contrib/modules \
     .. && \
     make install
-ENV OpenCV_DIR /opt/opencv-3.1.0
+ENV OpenCV_DIR /opt/opencv-3.2.0
 
 # Caffe
 RUN git clone https://github.com/BVLC/caffe
