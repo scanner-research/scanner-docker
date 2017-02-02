@@ -2,6 +2,7 @@
 
 FROM nvidia/cuda:8.0-cudnn5-devel-ubuntu16.04
 MAINTAINER Will Crichton "wcrichto@cs.stanford.edu"
+ARG cores=1
 
 RUN apt-get update
 RUN apt-get upgrade -y
@@ -31,15 +32,15 @@ RUN mkdir ${deps}
 
 # gRPC
 RUN git clone -b v1.0.0 https://github.com/grpc/grpc
-RUN cd grpc && git submodule update --init && make install && \
-    cd third_party/protobuf && make install
+RUN cd grpc && git submodule update --init && make install -j$cores && \
+    cd third_party/protobuf && make install -j$cores
 
 # OpenCV
 WORKDIR ${deps}
 RUN git clone https://github.com/opencv/opencv && cd opencv && git checkout tags/3.2.0
 RUN git clone https://github.com/opencv/opencv_contrib && cd opencv && git checkout tags/3.2.0
 RUN git clone https://ceres-solver.googlesource.com/ceres-solver
-RUN cd ceres-solver && mkdir build && cd build && cmake .. && make install
+RUN cd ceres-solver && mkdir build && cd build && cmake .. && make install -j$cores
 RUN mkdir ${deps}/opencv/build && \
     cd ${deps}/opencv/build && \
     cmake -D CMAKE_BUILD_TYPE=Release -D CMAKE_INSTALL_PREFIX=/opt/opencv-3.2.0 \
@@ -47,7 +48,7 @@ RUN mkdir ${deps}/opencv/build && \
     -D CUDA_FAST_MATH=1 -D WITH_CUBLAS=1 \
     -D OPENCV_EXTRA_MODULES_PATH=${deps}/opencv_contrib/modules \
     .. && \
-    make install
+    make install -j$cores
 ENV OpenCV_DIR /opt/opencv-3.2.0
 
 # Caffe
@@ -56,12 +57,12 @@ ADD thirdparty/caffe/Makefile.config ${deps}/caffe/Makefile.config
 RUN cd caffe && mkdir build && cd build && \
     cmake -D CMAKE_INSTALL_PREFIX=/opt/caffe -DCUDA_ARCH_NAME=Manual \
           -D CUDA_ARCH_BIN="61" -DCUDA_ARCH_PTX="61" .. && \
-    make install
+    make install -j$cores
 ENV Caffe_DIR /opt/caffe
 ENV PYTHONPATH /opt/caffe/python
 
 # Halide
 RUN git clone https://github.com/halide/Halide
-RUN cd Halide && git checkout auto_scheduler && make distrib && \
+RUN cd Halide && git checkout auto_scheduler && make distrib -j$cores && \
     cp -r distrib /opt/halide
 ENV Halide_DIR /opt/halide
