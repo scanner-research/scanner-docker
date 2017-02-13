@@ -1,4 +1,4 @@
-# Scanner base image for Ubuntu 16.04, CUDA 8.0, OpenCV 3.1.0
+# Scanner base image for Ubuntu 16.04, CUDA 8.0, OpenCV 3.2.0
 
 FROM nvidia/cuda:8.0-cudnn5-devel-ubuntu16.04
 MAINTAINER Will Crichton "wcrichto@cs.stanford.edu"
@@ -19,7 +19,7 @@ RUN apt-get install -y libssl-dev libcurl3-dev liblzma-dev libeigen3-dev  \
     libleveldb-dev libsnappy-dev libhdf5-serial-dev liblmdb-dev python-dev \
     llvm clang python-tk autoconf autogen libtool
 RUN apt-get install -y --no-install-recommends libboost-all-dev
-ADD thirdparty/cuda/libnvcuvid.so.367.48 /usr/local/cuda/lib64/libnvcuvid.so
+ADD thirdparty/cuda/libnvcuvid.so.367.48 /usr/lib/x86_64-linux-gnu/libnvcuvid.so
 
 # Python dependencies
 RUN pip install --upgrade pip
@@ -31,15 +31,15 @@ ENV deps /deps
 RUN mkdir ${deps}
 
 # gRPC
-RUN git clone -b v1.0.0 https://github.com/grpc/grpc
+RUN git clone -b v1.1.2 https://github.com/grpc/grpc
 RUN cd grpc && git submodule update --init && make install -j$cores && \
     cd third_party/protobuf && make install -j$cores
 
 # OpenCV
 WORKDIR ${deps}
-RUN git clone https://github.com/opencv/opencv && cd opencv && git checkout tags/3.2.0
-RUN git clone https://github.com/opencv/opencv_contrib && cd opencv && git checkout tags/3.2.0
-RUN git clone https://ceres-solver.googlesource.com/ceres-solver
+RUN git clone -b 3.2.0 https://github.com/opencv/opencv
+RUN git clone -b 3.2.0  https://github.com/opencv/opencv_contrib
+RUN git clone -b 1.12.0 https://github.com/ceres-solver/ceres-solver
 RUN cd ceres-solver && mkdir build && cd build && cmake .. && make install -j$cores
 RUN mkdir ${deps}/opencv/build && \
     cd ${deps}/opencv/build && \
