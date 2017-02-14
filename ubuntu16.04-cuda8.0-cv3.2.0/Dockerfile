@@ -20,6 +20,8 @@ RUN apt-get install -y libssl-dev libcurl3-dev liblzma-dev libeigen3-dev  \
     llvm clang python-tk autoconf autogen libtool
 RUN apt-get install -y --no-install-recommends libboost-all-dev
 ADD thirdparty/cuda/libnvcuvid.so.367.48 /usr/lib/x86_64-linux-gnu/libnvcuvid.so
+RUN ln -s /usr/local/cuda-8.0/targets/x86_64-linux/lib/stubs/libcuda.so \
+       /usr/local/cuda-8.0/targets/x86_64-linux/lib/stubs/libcuda.so.1
 
 # Python dependencies
 RUN pip install --upgrade pip
@@ -31,12 +33,12 @@ ENV deps /deps
 RUN mkdir ${deps}
 
 # gRPC
-RUN git clone -b v1.1.2 https://github.com/grpc/grpc
+WORKDIR ${deps}
+RUN git clone -b v1.0.0 https://github.com/grpc/grpc
 RUN cd grpc && git submodule update --init && make install -j$cores && \
     cd third_party/protobuf && make install -j$cores
 
 # OpenCV
-WORKDIR ${deps}
 RUN git clone -b 3.2.0 https://github.com/opencv/opencv
 RUN git clone -b 3.2.0  https://github.com/opencv/opencv_contrib
 RUN git clone -b 1.12.0 https://github.com/ceres-solver/ceres-solver
@@ -50,6 +52,7 @@ RUN mkdir ${deps}/opencv/build && \
     .. && \
     make install -j$cores
 ENV OpenCV_DIR /opt/opencv-3.2.0
+ENV PYTHONPATH /opt/opencv-3.2.0/lib/python2.7/dist-packages:$PYTHONPATH
 
 # Caffe
 RUN git clone https://github.com/BVLC/caffe
@@ -59,7 +62,7 @@ RUN cd caffe && mkdir build && cd build && \
           -D CUDA_ARCH_BIN="61" -DCUDA_ARCH_PTX="61" .. && \
     make install -j$cores
 ENV Caffe_DIR /opt/caffe
-ENV PYTHONPATH /opt/caffe/python
+ENV PYTHONPATH /opt/caffe/python:$PYTHONPATH
 
 # Halide
 RUN git clone https://github.com/halide/Halide
