@@ -73,11 +73,19 @@ RUN git clone https://github.com/halide/Halide && \
 ENV Halide_DIR /opt/halide
 
 # OpenFace
-RUN git clone https://github.com/scanner-research/OpenFace.git
-RUN cd OpenFace && mkdir build && cd build && \
+RUN git clone https://github.com/scanner-research/OpenFace.git && \
+    cd OpenFace && mkdir build && cd build && \
     cmake -D CMAKE_INSTALL_PREFIX=/opt/OpenFace .. && \
     make install -j$cores && \
     rm -rf ${deps}/OpenFace
 ENV OpenFace_DIR /opt/OpenFace
+
+# AWS C++ SDK
+RUN git clone https://github.com/aws/aws-sdk-cpp && \
+    mkdir /opt/aws-sdk-cpp && cd /opt/aws-sdk-cpp && \
+    cmake -D CMAKE_BUILD_TYPE=Release ${deps}/aws-sdk-cpp && \
+    make -j$cores && \
+    rm -rf ${deps}/aws-sdk-cpp
+ENV CMAKE_PREFIX_PATH /opt/aws-sdk-cpp
 
 WORKDIR /
