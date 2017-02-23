@@ -31,12 +31,6 @@ ENV deps /deps
 RUN mkdir ${deps}
 WORKDIR ${deps}
 
-# gRPC
-RUN git clone -b v1.0.0 https://github.com/grpc/grpc && \
-    cd grpc && git submodule update --init && make install -j$cores && \
-    cd third_party/protobuf && make install -j$cores && \
-    rm -rf ${deps}/grpc
-
 # OpenCV
 RUN git clone -b 3.2.0 https://github.com/opencv/opencv && \
     git clone -b 3.2.0  https://github.com/opencv/opencv_contrib && \
@@ -54,8 +48,14 @@ RUN git clone -b 3.2.0 https://github.com/opencv/opencv && \
 ENV OpenCV_DIR /opt/opencv-3.2.0
 ENV PYTHONPATH /opt/opencv-3.2.0/lib/python2.7/dist-packages:$PYTHONPATH
 
+# gRPC
+RUN git clone -b v1.1.2 https://github.com/grpc/grpc && \
+    cd grpc && git submodule update --init && make install -j$cores && \
+    cd third_party/protobuf && make install -j$cores && \
+    rm -rf ${deps}/grpc
+
 # Caffe
-RUN git clone https://github.com/BVLC/caffe
+RUN git clone -b rc5 https://github.com/BVLC/caffe
 ADD thirdparty/caffe/Makefile.config ${deps}/caffe/Makefile.config
 RUN cd caffe && mkdir build && cd build && \
     cmake -D CMAKE_INSTALL_PREFIX=/opt/caffe -DCUDA_ARCH_NAME=Manual \
