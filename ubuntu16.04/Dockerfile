@@ -21,11 +21,6 @@ ADD thirdparty/cuda/libnvcuvid.so.367.48 /usr/lib/x86_64-linux-gnu/libnvcuvid.so
 RUN ln -s /usr/local/cuda-8.0/targets/x86_64-linux/lib/stubs/libcuda.so \
        /usr/local/cuda-8.0/targets/x86_64-linux/lib/stubs/libcuda.so.1
 
-# Python dependencies
-RUN pip install --upgrade pip && \
-    pip install numpy protobuf toml youtube-dl scipy scikit-learn scikit-image \
-    enum34 matplotlib seaborn grpcio doxypypy
-
 # Non-apt-installable dependencies
 ENV deps /deps
 RUN mkdir ${deps}
@@ -54,17 +49,6 @@ RUN git clone -b v1.1.2 https://github.com/grpc/grpc && \
     cd third_party/protobuf && make install -j$cores && \
     rm -rf ${deps}/grpc
 
-# Caffe
-RUN git clone -b rc5 https://github.com/BVLC/caffe
-ADD thirdparty/caffe/Makefile.config ${deps}/caffe/Makefile.config
-RUN cd caffe && mkdir build && cd build && \
-    cmake -D CMAKE_INSTALL_PREFIX=/opt/caffe -DCUDA_ARCH_NAME=Manual \
-          -D CUDA_ARCH_BIN="61" -DCUDA_ARCH_PTX="61" .. && \
-    make install -j$cores && \
-    rm -rf ${deps}/caffe
-ENV Caffe_DIR /opt/caffe
-ENV PYTHONPATH /opt/caffe/python:$PYTHONPATH
-
 # Halide
 RUN git clone https://github.com/halide/Halide && \
     cd Halide && git checkout auto_scheduler && make distrib -j$cores && \
@@ -87,5 +71,20 @@ RUN git clone https://github.com/scanner-research/OpenFace.git && \
     make install -j$cores && \
     rm -rf ${deps}/OpenFace
 ENV CMAKE_PREFIX_PATH /opt/OpenFace/lib/cmake:${CMAKE_PREFIX_PATH}
+
+# Python dependencies
+ADD requirements.txt .
+RUN pip install --upgrade pip && pip install -r requirements.txt
+
+# Caffe
+RUN git clone -b rc5 https://github.com/BVLC/caffe
+ADD thirdparty/caffe/Makefile.config ${deps}/caffe/Makefile.config
+RUN cd caffe && mkdir build && cd build && \
+    cmake -D CMAKE_INSTALL_PREFIX=/opt/caffe -DCUDA_ARCH_NAME=Manual \
+          -D CUDA_ARCH_BIN="61" -DCUDA_ARCH_PTX="61" .. && \
+    make install -j$cores && \
+    rm -rf ${deps}/caffe
+ENV Caffe_DIR /opt/caffe
+ENV PYTHONPATH /opt/caffe/python:$PYTHONPATH
 
 WORKDIR /
