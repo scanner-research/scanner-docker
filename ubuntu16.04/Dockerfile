@@ -26,6 +26,10 @@ ENV deps /deps
 RUN mkdir ${deps}
 WORKDIR ${deps}
 
+# Python dependencies
+ADD requirements.txt .
+RUN pip install --upgrade pip && pip install -r requirements.txt
+
 # OpenCV
 RUN git clone -b 3.2.0 https://github.com/opencv/opencv && \
     git clone -b 3.2.0  https://github.com/opencv/opencv_contrib && \
@@ -49,6 +53,17 @@ RUN git clone -b v1.1.2 https://github.com/grpc/grpc && \
     cd third_party/protobuf && make install -j$cores && \
     rm -rf ${deps}/grpc
 
+# Caffe
+RUN git clone -b rc5 https://github.com/BVLC/caffe
+ADD thirdparty/caffe/Makefile.config ${deps}/caffe/Makefile.config
+RUN cd caffe && mkdir build && cd build && \
+    cmake -D CMAKE_INSTALL_PREFIX=/opt/caffe -DCUDA_ARCH_NAME=Manual \
+          -D CUDA_ARCH_BIN="61" -DCUDA_ARCH_PTX="61" .. && \
+    make install -j$cores && \
+    rm -rf ${deps}/caffe
+ENV Caffe_DIR /opt/caffe
+ENV PYTHONPATH /opt/caffe/python:$PYTHONPATH
+
 # Halide
 RUN git clone https://github.com/halide/Halide && \
     cd Halide && git checkout auto_scheduler && make distrib -j$cores && \
@@ -71,20 +86,5 @@ RUN git clone https://github.com/scanner-research/OpenFace.git && \
     make install -j$cores && \
     rm -rf ${deps}/OpenFace
 ENV CMAKE_PREFIX_PATH /opt/OpenFace/lib/cmake:${CMAKE_PREFIX_PATH}
-
-# Python dependencies
-ADD requirements.txt .
-RUN pip install --upgrade pip && pip install -r requirements.txt
-
-# Caffe
-RUN git clone -b rc5 https://github.com/BVLC/caffe
-ADD thirdparty/caffe/Makefile.config ${deps}/caffe/Makefile.config
-RUN cd caffe && mkdir build && cd build && \
-    cmake -D CMAKE_INSTALL_PREFIX=/opt/caffe -DCUDA_ARCH_NAME=Manual \
-          -D CUDA_ARCH_BIN="61" -DCUDA_ARCH_PTX="61" .. && \
-    make install -j$cores && \
-    rm -rf ${deps}/caffe
-ENV Caffe_DIR /opt/caffe
-ENV PYTHONPATH /opt/caffe/python:$PYTHONPATH
 
 WORKDIR /
