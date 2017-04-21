@@ -9,6 +9,7 @@ RUN apt-get update && apt-get upgrade -y && \
     apt-get install -y software-properties-common && \
     add-apt-repository -y ppa:george-edison55/cmake-3.x && \
     add-apt-repository -y ppa:git-core/ppa && \
+    add-apt-repository -y ppa:jonathonf/ffmpeg-3 && \
     apt-get update && \
     apt-get install -y libssl-dev libcurl3-dev liblzma-dev libeigen3-dev  \
     libgoogle-glog-dev libatlas-base-dev libsuitesparse-dev libgflags-dev \
