@@ -97,7 +97,7 @@ RUN git clone https://github.com/facebookresearch/faiss/ && \
     sed -i -e 's/BLASLDFLAGS=\/usr\/lib64\/libopenblas.so.0/BLASLDFLAGS=\/usr\/lib\/libopenblas.so.0/g' makefile.inc && \
     sed -i -e 's/\/usr\/lib64\/python2.7\/site-packages\/numpy\/core\/include\//\/usr\/local\/lib\/python2.7\/dist-packages\/numpy\/core\/include/g' makefile.inc && \
     make -j$cores && make py -j$cores && \
-    cd gpu && make -j$cores && make py -j$cores \
+    cd gpu && make -j$cores && make py -j$cores && \
     cp -r ${deps}/faiss /opt/faiss && \
     rm -rf ${deps}/faiss
 ENV PYTHONPATH /opt/faiss:${PYTHONPATH}
