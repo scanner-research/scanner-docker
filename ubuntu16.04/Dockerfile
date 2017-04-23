@@ -16,7 +16,8 @@ RUN apt-get update && apt-get upgrade -y && \
     libx264-dev libavcodec-dev libavresample-dev libavformat-dev libavfilter-dev \
     ffmpeg libpng-dev libjpeg-dev libbz2-dev cmake git python-pip wget \
     libleveldb-dev libsnappy-dev libhdf5-serial-dev liblmdb-dev python-dev \
-    llvm clang python-tk autoconf autogen libtool libtbb-dev && \
+    llvm clang python-tk autoconf autogen libtool libtbb-dev libopenblas-dev \
+    liblapacke-dev swig && \
     apt-get install -y --no-install-recommends libboost-all-dev
 ADD thirdparty/cuda/libnvcuvid.so.367.48 /usr/lib/x86_64-linux-gnu/libnvcuvid.so
 RUN ln -s /usr/local/cuda-8.0/targets/x86_64-linux/lib/stubs/libcuda.so \
@@ -46,7 +47,7 @@ RUN git clone -b 3.2.0 https://github.com/opencv/opencv && \
     make install -j$cores && \
     rm -rf ${deps}/opencv ${deps}/opencv_contrib ${deps}/ceres-solver
 ENV OpenCV_DIR /opt/opencv-3.2.0
-ENV PYTHONPATH /opt/opencv-3.2.0/lib/python2.7/dist-packages:$PYTHONPATH
+ENV PYTHONPATH /opt/opencv-3.2.0/lib/python2.7/dist-packages:${PYTHONPATH}
 
 # gRPC
 RUN git clone -b v1.1.2 https://github.com/grpc/grpc && \
@@ -63,11 +64,12 @@ RUN cd caffe && mkdir build && cd build && \
     make install -j$cores && \
     rm -rf ${deps}/caffe
 ENV Caffe_DIR /opt/caffe
-ENV PYTHONPATH /opt/caffe/python:$PYTHONPATH
+ENV PYTHONPATH /opt/caffe/python:${PYTHONPATH}
 
 # Halide
 RUN git clone https://github.com/halide/Halide && \
-    cd Halide && git checkout auto_scheduler && make distrib -j$cores && \
+    cd Halide && git checkout 2968a1c2b6f58a1bfc67c3abcbcd6f249a3fc8fb && \
+    make distrib -j$cores && \
     cp -r distrib /opt/halide && \
     rm -rf ${deps}/Halide
 ENV Halide_DIR /opt/halide
@@ -77,7 +79,7 @@ RUN git clone -b v19.2 https://github.com/davisking/dlib && \
     cd dlib && mkdir build && cd build && \
     cmake -D CMAKE_INSTALL_PREFIX=/opt/dlib .. && \
     make install -j$cores && \
-    rm -rf ${deps}dlib
+    rm -rf ${deps}/dlib
 ENV CMAKE_PREFIX_PATH /opt/dlib/lib/cmake/dlib:${CMAKE_PREFIX_PATH}
 
 # OpenFace
@@ -87,5 +89,17 @@ RUN git clone https://github.com/scanner-research/OpenFace.git && \
     make install -j$cores && \
     rm -rf ${deps}/OpenFace
 ENV CMAKE_PREFIX_PATH /opt/OpenFace/lib/cmake:${CMAKE_PREFIX_PATH}
+
+# FAISS
+RUN git clone https://github.com/facebookresearch/faiss/ && \
+    cd faiss && git checkout 6893b9e170d75dc0292eb6ea893a54db10acd9fe && \
+    cp example_makefiles/makefile.inc.Linux makefile.inc && \
+    sed -i -e 's/BLASLDFLAGS=\/usr\/lib64\/libopenblas.so.0/BLASLDFLAGS=\/usr\/lib\/libopenblas.so.0/g' makefile.inc && \
+    sed -i -e 's/\/usr\/lib64\/python2.7\/site-packages\/numpy\/core\/include\//\/usr\/local\/lib\/python2.7\/dist-packages\/numpy\/core\/include/g' makefile.inc && \
+    make -j$cores && make py -j$cores && \
+    cd gpu && make -j$cores && make py -j$cores \
+    cp -r ${deps}/faiss /opt/faiss && \
+    rm -rf ${deps}/faiss
+ENV PYTHONPATH /opt/faiss:${PYTHONPATH}
 
 WORKDIR /
