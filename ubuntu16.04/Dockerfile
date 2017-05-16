@@ -7,18 +7,16 @@ ARG cores=1
 # Apt-installable dependencies
 RUN apt-get update && apt-get upgrade -y && \
     apt-get install -y software-properties-common && \
-    add-apt-repository -y ppa:george-edison55/cmake-3.x && \
     add-apt-repository -y ppa:git-core/ppa && \
     add-apt-repository -y ppa:jonathonf/ffmpeg-3 && \
     apt-get update && \
     apt-get install -y libssl-dev libcurl3-dev liblzma-dev libeigen3-dev  \
     libgoogle-glog-dev libatlas-base-dev libsuitesparse-dev libgflags-dev \
     libx264-dev libavcodec-dev libavresample-dev libavformat-dev libavfilter-dev \
-    ffmpeg libpng-dev libjpeg-dev libbz2-dev cmake git python-pip wget \
+    ffmpeg libpng-dev libjpeg-dev libbz2-dev git python-pip wget \
     libleveldb-dev libsnappy-dev libhdf5-serial-dev liblmdb-dev python-dev \
     llvm clang python-tk autoconf autogen libtool libtbb-dev libopenblas-dev \
-    liblapacke-dev swig && \
-    apt-get install -y --no-install-recommends libboost-all-dev
+    liblapacke-dev swig
 ADD thirdparty/cuda/libnvcuvid.so.367.48 /usr/lib/x86_64-linux-gnu/libnvcuvid.so
 RUN ln -s /usr/local/cuda-8.0/targets/x86_64-linux/lib/stubs/libcuda.so \
        /usr/local/cuda-8.0/targets/x86_64-linux/lib/stubs/libcuda.so.1
@@ -28,11 +26,26 @@ ENV deps /deps
 RUN mkdir ${deps}
 WORKDIR ${deps}
 
+# CMake
+RUN wget "https://cmake.org/files/v3.8/cmake-3.8.1.tar.gz" && \
+    tar -xf cmake-3.8.1.tar.gz && cd ${deps}/cmake-3.8.1 && \
+    ./bootstrap --parallel=${cores} && \
+    make install -j${cores} && \
+    rm -rf ${deps}/cmake-3.8.1.tar.gz ${deps}/cmake-3.8.1
+
 # Python dependencies
 ADD requirements.txt .
 RUN pip install --upgrade pip && pip install -r requirements.txt
 
-# OpenCV
+# Boost 1.63.0
+RUN wget "https://dl.bintray.com/boostorg/release/1.63.0/source/boost_1_63_0.tar.gz" && \
+    tar -xf boost_1_63_0.tar.gz && cd boost_1_63_0 && ./bootstrap.sh && \
+    ./b2 install --prefix=/opt/boost-1.63.0 -j ${cores} && \
+    rm -rf ${deps}/boost_1_63_0.tar.gz ${deps}/boost_1_63_0
+ENV BOOST_ROOT /opt/boost-1.63.0
+ENV LD_LIBRARY_PATH /opt/boost-1.63.0/lib:${LD_LIBRARY_PATH}
+
+# OpenCV 3.2.0 + OpenCV contrib
 RUN git clone -b 3.2.0 https://github.com/opencv/opencv && \
     git clone -b 3.2.0  https://github.com/opencv/opencv_contrib && \
     git clone -b 1.12.0 https://github.com/ceres-solver/ceres-solver && \
@@ -49,13 +62,13 @@ RUN git clone -b 3.2.0 https://github.com/opencv/opencv && \
 ENV OpenCV_DIR /opt/opencv-3.2.0
 ENV PYTHONPATH /opt/opencv-3.2.0/lib/python2.7/dist-packages:${PYTHONPATH}
 
-# gRPC
+# gRPC 1.1.2
 RUN git clone -b v1.1.2 https://github.com/grpc/grpc && \
     cd grpc && git submodule update --init && make install -j$cores && \
     cd third_party/protobuf && make install -j$cores && \
     rm -rf ${deps}/grpc
 
-# Caffe
+# Caffe rc5
 RUN git clone -b rc5 https://github.com/BVLC/caffe
 ADD thirdparty/caffe/Makefile.config ${deps}/caffe/Makefile.config
 RUN cd caffe && mkdir build && cd build && \
@@ -66,23 +79,24 @@ RUN cd caffe && mkdir build && cd build && \
 ENV Caffe_DIR /opt/caffe
 ENV PYTHONPATH /opt/caffe/python:${PYTHONPATH}
 
-# Halide
-RUN git clone https://github.com/halide/Halide && \
-    cd Halide && git checkout 2968a1c2b6f58a1bfc67c3abcbcd6f249a3fc8fb && \
+# Halide (arbitrary commit)
+RUN git clone -b release_2016_10_25 https://github.com/halide/Halide && \
+    cd Halide && \
     make distrib -j$cores && \
     cp -r distrib /opt/halide && \
     rm -rf ${deps}/Halide
 ENV Halide_DIR /opt/halide
 
-# dlib
+# dlib 19.2
 RUN git clone -b v19.2 https://github.com/davisking/dlib && \
     cd dlib && mkdir build && cd build && \
     cmake -D CMAKE_INSTALL_PREFIX=/opt/dlib .. && \
-    make install -j$cores && \
+    make install -j$cores && make install -j$cores && \
+    cd .. && python setup.py install && \
     rm -rf ${deps}/dlib
 ENV CMAKE_PREFIX_PATH /opt/dlib/lib/cmake/dlib:${CMAKE_PREFIX_PATH}
 
-# OpenFace
+# OpenFace (our build)
 RUN git clone https://github.com/scanner-research/OpenFace.git && \
     cd OpenFace && mkdir build && cd build && \
     cmake -D CMAKE_INSTALL_PREFIX=/opt/OpenFace .. && \
@@ -90,7 +104,7 @@ RUN git clone https://github.com/scanner-research/OpenFace.git && \
     rm -rf ${deps}/OpenFace
 ENV CMAKE_PREFIX_PATH /opt/OpenFace/lib/cmake:${CMAKE_PREFIX_PATH}
 
-# FAISS
+# FAISS (arbitrary commit)
 RUN git clone https://github.com/facebookresearch/faiss/ && \
     cd faiss && git checkout 6893b9e170d75dc0292eb6ea893a54db10acd9fe && \
     cp example_makefiles/makefile.inc.Linux makefile.inc && \
