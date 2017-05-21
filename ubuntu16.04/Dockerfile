@@ -1,4 +1,4 @@
-# Scanner base image for Ubuntu 16.04, CUDA 8.0, OpenCV 3.2.0
+# Scanner base image for Ubuntu 16.04
 
 FROM nvidia/cuda:8.0-cudnn5-devel-ubuntu16.04
 MAINTAINER Will Crichton "wcrichto@cs.stanford.edu"
@@ -70,10 +70,10 @@ RUN git clone -b 3.2.0 https://github.com/opencv/opencv && \
     make install -j$cores && \
     mkdir ${deps}/opencv/build && cd ${deps}/opencv/build && \
     cmake -D CMAKE_BUILD_TYPE=Release -D CMAKE_INSTALL_PREFIX=/opt/opencv-3.2.0 \
-    -D BUILD_TESTS=OFF -D BUILD_PERF_TESTS=OFF -D ENABLE_FAST_MATH=1 \
-    -D CUDA_FAST_MATH=1 -D WITH_CUBLAS=1 \
-    -D OPENCV_EXTRA_MODULES_PATH=${deps}/opencv_contrib/modules \
-    .. && \
+          -D BUILD_TESTS=OFF -D BUILD_PERF_TESTS=OFF -D ENABLE_FAST_MATH=1 \
+          -D CUDA_FAST_MATH=1 -D WITH_CUBLAS=1 -D WITH_NVCUVID=1 \
+          -D OPENCV_EXTRA_MODULES_PATH=${deps}/opencv_contrib/modules \
+          .. && \
     make install -j$cores && \
     rm -rf ${deps}/opencv ${deps}/opencv_contrib ${deps}/ceres-solver
 ENV OpenCV_DIR /opt/opencv-3.2.0
