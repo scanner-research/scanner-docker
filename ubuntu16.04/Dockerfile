@@ -8,15 +8,14 @@ ARG cores=1
 RUN apt-get update && apt-get upgrade -y && \
     apt-get install -y software-properties-common && \
     add-apt-repository -y ppa:git-core/ppa && \
-    add-apt-repository -y ppa:jonathonf/ffmpeg-3 && \
     apt-get update && \
     apt-get install -y libssl-dev libcurl3-dev liblzma-dev libeigen3-dev  \
     libgoogle-glog-dev libatlas-base-dev libsuitesparse-dev libgflags-dev \
-    libx264-dev libavcodec-dev libavresample-dev libavformat-dev libavfilter-dev \
-    ffmpeg libpng-dev libjpeg-dev libbz2-dev git python-pip wget \
+    libx264-dev libopenjpeg-dev libxvidcore-dev \
+    libpng-dev libjpeg-dev libbz2-dev git python-pip wget \
     libleveldb-dev libsnappy-dev libhdf5-serial-dev liblmdb-dev python-dev \
     llvm clang python-tk autoconf autogen libtool libtbb-dev libopenblas-dev \
-    liblapacke-dev swig
+    liblapacke-dev swig yasm
 ADD thirdparty/cuda/libnvcuvid.so.367.48 /usr/lib/x86_64-linux-gnu/libnvcuvid.so
 RUN ln -s /usr/local/cuda-8.0/targets/x86_64-linux/lib/stubs/libcuda.so \
        /usr/local/cuda-8.0/targets/x86_64-linux/lib/stubs/libcuda.so.1
@@ -36,6 +35,24 @@ RUN wget "https://cmake.org/files/v3.8/cmake-3.8.1.tar.gz" && \
 # Python dependencies
 ADD requirements.txt .
 RUN pip install --upgrade pip && pip install -r requirements.txt
+
+# FFMPEG
+RUN git clone -b n3.3.1 https://git.ffmpeg.org/ffmpeg.git && cd ffmpeg && \
+    ./configure --prefix=/opt/ffmpeg-3.3.1 --extra-version=0ubuntu0.16.04.1 \
+                --toolchain=hardened --cc=cc --cxx=g++ --enable-gpl \
+                --enable-shared --disable-stripping \
+                --disable-decoder=libopenjpeg --disable-decoder=libschroedinger \
+                --enable-avresample --enable-libopenjpeg --enable-libxvid \
+                --enable-libx264 --enable-nonfree --enable-nvenc --enable-cuda \
+                --enable-libnpp --enable-cuvid \
+                --extra-cflags=-I/usr/local/include \
+                --extra-cflags=-I/usr/local/cuda/include \
+                --extra-ldflags=-L/usr/local/cuda/lib64 && \
+    make install -j${cores} && \
+    rm -rf ${deps}/ffmpeg
+ENV PATH /opt/ffmpeg-3.3.1/bin:${PATH}
+ENV LD_LIBRARY_PATH /opt/ffmpeg-3.3.1/lib:${LD_LIBRARY_PATH}
+ENV PKG_CONFIG_PATH /opt/ffmpeg-3.3.1/lib/pkgconfig:${PKG_CONFIG_PATH}
 
 # Boost 1.63.0
 RUN wget "https://dl.bintray.com/boostorg/release/1.63.0/source/boost_1_63_0.tar.gz" && \
