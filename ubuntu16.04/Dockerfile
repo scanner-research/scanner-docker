@@ -19,6 +19,7 @@ RUN apt-get update && apt-get upgrade -y && \
 ADD thirdparty/cuda/libnvcuvid.so.367.48 /usr/lib/x86_64-linux-gnu/libnvcuvid.so
 RUN ln -s /usr/local/cuda-8.0/targets/x86_64-linux/lib/stubs/libcuda.so \
        /usr/local/cuda-8.0/targets/x86_64-linux/lib/stubs/libcuda.so.1
+ENV CUDA_LIB_PATH /usr/local/cuda/lib64/stubs
 
 # Non-apt-installable dependencies
 ENV deps /deps
