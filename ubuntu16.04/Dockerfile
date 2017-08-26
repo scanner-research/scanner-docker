@@ -80,8 +80,8 @@ RUN git clone -b 3.2.0 https://github.com/opencv/opencv && \
 ENV OpenCV_DIR /opt/opencv-3.2.0
 ENV PYTHONPATH /opt/opencv-3.2.0/lib/python2.7/dist-packages:${PYTHONPATH}
 
-# gRPC 1.1.2
-RUN git clone -b v1.1.2 https://github.com/grpc/grpc && \
+# gRPC 1.4.7
+RUN git clone -b v1.4.7 https://github.com/grpc/grpc && \
     cd grpc && git submodule update --init && make install -j$cores && \
     cd third_party/protobuf && make install -j$cores && \
     rm -rf ${deps}/grpc
