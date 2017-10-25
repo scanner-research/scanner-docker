@@ -8,6 +8,7 @@ ARG cores=1
 RUN apt-get update && apt-get upgrade -y && \
     apt-get install -y software-properties-common && \
     add-apt-repository -y ppa:git-core/ppa && \
+    add-apt-repository -y ppa:jonathonf/python-2.7 && \
     apt-get update && \
     apt-get install -y libssl-dev libcurl3-dev liblzma-dev libeigen3-dev  \
     libgoogle-glog-dev libatlas-base-dev libsuitesparse-dev libgflags-dev \
@@ -15,7 +16,7 @@ RUN apt-get update && apt-get upgrade -y && \
     libpng-dev libjpeg-dev libbz2-dev git python-pip wget \
     libleveldb-dev libsnappy-dev libhdf5-serial-dev liblmdb-dev python-dev \
     llvm clang python-tk autoconf autogen libtool libtbb-dev libopenblas-dev \
-    liblapacke-dev swig yasm
+    liblapacke-dev swig yasm python2.7
 ADD thirdparty/cuda/libnvcuvid.so.367.48 /usr/lib/x86_64-linux-gnu/libnvcuvid.so
 RUN ln -s /usr/local/cuda-8.0/targets/x86_64-linux/lib/stubs/libcuda.so \
        /usr/local/cuda-8.0/targets/x86_64-linux/lib/stubs/libcuda.so.1
