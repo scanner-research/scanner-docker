@@ -3,6 +3,7 @@
 FROM nvidia/cuda:8.0-cudnn5-devel-ubuntu16.04
 MAINTAINER Will Crichton "wcrichto@cs.stanford.edu"
 ARG cores=1
+ARG cpu_only=OFF
 
 # Apt-installable dependencies
 RUN apt-get update && apt-get upgrade -y && \
@@ -88,26 +89,19 @@ RUN git clone -b v1.4.7 https://github.com/grpc/grpc && \
     rm -rf ${deps}/grpc
 
 # Caffe rc5
-RUN git clone -b rc5 https://github.com/BVLC/caffe caffe.gpu
-ADD thirdparty/caffe/Makefile.config ${deps}/caffe.gpu/Makefile.config
-RUN cd caffe.gpu && mkdir build && cd build && \
-    cmake -DCMAKE_INSTALL_PREFIX=/opt/caffe.gpu \
+RUN git clone -b rc5 https://github.com/BVLC/caffe caffe
+ADD thirdparty/caffe/Makefile.config ${deps}/caffe/Makefile.config
+RUN cd caffe. && mkdir build && cd build && \
+    cmake -DCMAKE_INSTALL_PREFIX=/opt/caffe \
+          -DCPU_ONLY=${cpu_only}  \
           -DCUDA_ARCH_NAME="Manual" \
           -DCUDA_ARCH_BIN="30 35 50 60 61" \
           -DCUDA_ARCH_PTX="30 35 50 60 61" \
           .. && \
     make install -j$cores && \
-    rm -rf ${deps}/caffe.gpu
-ENV Caffe_DIR /opt/caffe.gpu
-ENV PYTHONPATH /opt/caffe.gpu/python:${PYTHONPATH}
-
-# Caffe rc5 for CPU
-RUN git clone -b rc5 https://github.com/BVLC/caffe caffe.cpu
-ADD thirdparty/caffe/Makefile.config ${deps}/caffe.cpu/Makefile.config
-RUN cd caffe.cpu && mkdir build && cd build && \
-    cmake -DCMAKE_INSTALL_PREFIX=/opt/caffe.cpu -DCPU_ONLY=ON .. && \
-    make install -j$cores && \
-    rm -rf ${deps}/caffe.cpu
+    rm -rf ${deps}/caffe
+ENV Caffe_DIR /opt/caffe
+ENV PYTHONPATH /opt/caffe/python:${PYTHONPATH}
 
 # Halide (arbitrary commit)
 RUN git clone -b release_2016_10_25 https://github.com/halide/Halide && \
