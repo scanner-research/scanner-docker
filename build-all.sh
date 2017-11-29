@@ -10,10 +10,10 @@ do
     tag=scannerresearch/scanner-base:$dir-gpu
     docker build --build-arg cores=$CORES \
            --no-cache=$NO_CACHE -t $tag $dir
-    docker push $tag-gpu
+    docker push $tag
 
     tag=scannerresearch/scanner-base:$dir-cpu
     docker build --build-arg cores=$CORES --build-arg cpu_only=ON \
            --no-cache=$NO_CACHE -t $tag $dir
-    docker push $tag-cpu
+    docker push $tag
 done
