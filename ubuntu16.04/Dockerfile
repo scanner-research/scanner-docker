@@ -89,9 +89,9 @@ RUN git clone -b v1.4.7 https://github.com/grpc/grpc && \
     rm -rf ${deps}/grpc
 
 # Caffe rc5
-RUN git clone -b rc5 https://github.com/BVLC/caffe caffe
+RUN git clone -b rc5 https://github.com/BVLC/caffe
 ADD thirdparty/caffe/Makefile.config ${deps}/caffe/Makefile.config
-RUN cd caffe. && mkdir build && cd build && \
+RUN cd caffe && mkdir build && cd build && \
     cmake -DCMAKE_INSTALL_PREFIX=/opt/caffe \
           -DCPU_ONLY=${cpu_only}  \
           -DCUDA_ARCH_NAME="Manual" \
