@@ -90,12 +90,12 @@ RUN git clone -b v1.4.7 https://github.com/grpc/grpc && \
 # Caffe rc5
 RUN git clone -b rc5 https://github.com/BVLC/caffe caffe.gpu
 ADD thirdparty/caffe/Makefile.config ${deps}/caffe.gpu/Makefile.config
-RUN cd caffe && mkdir build && cd build && \
+RUN cd caffe.gpu && mkdir build && cd build && \
     cmake -DCMAKE_INSTALL_PREFIX=/opt/caffe.gpu \
           -DCUDA_ARCH_NAME="20 21(20) 30 35 50 60 61" \
           .. && \
     make install -j$cores && \
-    rm -rf ${deps}/caffe
+    rm -rf ${deps}/caffe.gpu
 ENV Caffe_DIR /opt/caffe.gpu
 ENV PYTHONPATH /opt/caffe.gpu/python:${PYTHONPATH}
 
