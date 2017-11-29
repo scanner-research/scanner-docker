@@ -88,15 +88,24 @@ RUN git clone -b v1.4.7 https://github.com/grpc/grpc && \
     rm -rf ${deps}/grpc
 
 # Caffe rc5
-RUN git clone -b rc5 https://github.com/BVLC/caffe
-ADD thirdparty/caffe/Makefile.config ${deps}/caffe/Makefile.config
+RUN git clone -b rc5 https://github.com/BVLC/caffe caffe.gpu
+ADD thirdparty/caffe/Makefile.config ${deps}/caffe.gpu/Makefile.config
 RUN cd caffe && mkdir build && cd build && \
-    cmake -D CMAKE_INSTALL_PREFIX=/opt/caffe -DCUDA_ARCH_NAME=Manual \
-          -D CUDA_ARCH_BIN="61" -DCUDA_ARCH_PTX="61" .. && \
+    cmake -DCMAKE_INSTALL_PREFIX=/opt/caffe.gpu \
+          -DCUDA_ARCH_NAME="20 21(20) 30 35 50 60 61" \
+          .. && \
     make install -j$cores && \
     rm -rf ${deps}/caffe
-ENV Caffe_DIR /opt/caffe
-ENV PYTHONPATH /opt/caffe/python:${PYTHONPATH}
+ENV Caffe_DIR /opt/caffe.gpu
+ENV PYTHONPATH /opt/caffe.gpu/python:${PYTHONPATH}
+
+# Caffe rc5 for CPU
+RUN git clone -b rc5 https://github.com/BVLC/caffe caffe.cpu
+ADD thirdparty/caffe/Makefile.config ${deps}/caffe.cpu/Makefile.config
+RUN cd caffe.cpu && mkdir build && cd build && \
+    cmake -DCMAKE_INSTALL_PREFIX=/opt/caffe.cpu -DCPU_ONLY=ON .. && \
+    make install -j$cores && \
+    rm -rf ${deps}/caffe.cpu
 
 # Halide (arbitrary commit)
 RUN git clone -b release_2016_10_25 https://github.com/halide/Halide && \
