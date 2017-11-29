@@ -92,7 +92,9 @@ RUN git clone -b rc5 https://github.com/BVLC/caffe caffe.gpu
 ADD thirdparty/caffe/Makefile.config ${deps}/caffe.gpu/Makefile.config
 RUN cd caffe.gpu && mkdir build && cd build && \
     cmake -DCMAKE_INSTALL_PREFIX=/opt/caffe.gpu \
-          -DCUDA_ARCH_NAME="20 21(20) 30 35 50 60 61" \
+          -DCUDA_ARCH_NAME="Manual" \
+          -DCUDA_ARCH_BIN="20 21(20) 30 35 50 60 61" \
+          -DCUDA_ARCH_PTX="20 21(20) 30 35 50 60 61" \
           .. && \
     make install -j$cores && \
     rm -rf ${deps}/caffe.gpu
