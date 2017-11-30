@@ -17,7 +17,7 @@ RUN apt-get update && apt-get upgrade -y && \
     libpng-dev libjpeg-dev libbz2-dev git python-pip wget \
     libleveldb-dev libsnappy-dev libhdf5-serial-dev liblmdb-dev python-dev \
     llvm clang python-tk autoconf autogen libtool libtbb-dev libopenblas-dev \
-    liblapacke-dev swig yasm python2.7
+    liblapacke-dev swig yasm python2.7 cpio
 ADD thirdparty/cuda/libnvcuvid.so.367.48 /usr/lib/x86_64-linux-gnu/libnvcuvid.so
 RUN ln -s /usr/local/cuda-8.0/targets/x86_64-linux/lib/stubs/libcuda.so \
        /usr/local/cuda-8.0/targets/x86_64-linux/lib/stubs/libcuda.so.1
@@ -82,26 +82,13 @@ RUN git clone -b 3.2.0 https://github.com/opencv/opencv && \
 ENV OpenCV_DIR /opt/opencv-3.2.0
 ENV PYTHONPATH /opt/opencv-3.2.0/lib/python2.7/dist-packages:${PYTHONPATH}
 
-# gRPC 1.4.7
-RUN git clone -b v1.4.7 https://github.com/grpc/grpc && \
-    cd grpc && git submodule update --init && make install -j$cores && \
-    cd third_party/protobuf && make install -j$cores && \
-    rm -rf ${deps}/grpc
-
-# Caffe rc5
-RUN git clone -b rc5 https://github.com/BVLC/caffe
-ADD thirdparty/caffe/Makefile.config ${deps}/caffe/Makefile.config
-RUN cd caffe && mkdir build && cd build && \
-    cmake -DCMAKE_INSTALL_PREFIX=/opt/caffe \
-          -DCPU_ONLY=${cpu_only}  \
-          -DCUDA_ARCH_NAME="Manual" \
-          -DCUDA_ARCH_BIN="30 35 50 60 61" \
-          -DCUDA_ARCH_PTX="30 35 50 60 61" \
-          .. && \
+# gRPC 1.7.2
+RUN git clone -b v1.7.2 https://github.com/grpc/grpc && \
+    cd grpc && git submodule update --init && \
+    cd third_party/protobuf && bash autogen.sh && ./configure && \
     make install -j$cores && \
-    rm -rf ${deps}/caffe
-ENV Caffe_DIR /opt/caffe
-ENV PYTHONPATH /opt/caffe/python:${PYTHONPATH}
+    cd ${deps}/grpc && LDFLAGS=-L/usr/local/lib make install -j$cores && \
+    rm -rf ${deps}/grpc
 
 # Halide (arbitrary commit)
 RUN git clone -b release_2016_10_25 https://github.com/halide/Halide && \
@@ -139,5 +126,14 @@ RUN git clone https://github.com/facebookresearch/faiss/ && \
     cp -r ${deps}/faiss /opt/faiss && \
     rm -rf ${deps}/faiss
 ENV PYTHONPATH /opt/faiss:${PYTHONPATH}
+
+# Download MKL
+# RUN mkdir ${deps}/mkl && \
+#     cd ${deps}/mkl && \
+#     wget https://github.com/01org/mkl-dnn/releases/download/v0.11/mklml_lnx_2018.0.1.20171007.tgz && \
+#     tar -zxf mklml_lnx_2018.0.1.20171007.tgz && \
+#     mkdir -p /opt/intel && \
+#     cp -r mklml_lnx_2018.0.1.20171007 /opt/intel/mkl && \
+#     rm -rf ${deps}/mkl
 
 WORKDIR /

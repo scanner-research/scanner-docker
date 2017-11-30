@@ -1,0 +1,32 @@
+# Scanner base CPU image for Ubuntu 16.04
+
+ARG base_tag
+FROM ${base_tag}
+MAINTAINER Will Crichton "wcrichto@cs.stanford.edu"
+ARG cores=1
+
+WORKDIR ${deps}
+
+# Caffe rc5
+RUN git clone -b 1.0.6 https://github.com/intel/caffe
+ADD thirdparty/caffe/Makefile.config ${deps}/caffe/Makefile.config
+# Use more recent mkldnn commit to fix gcc bug
+RUN cd caffe && \
+    rm mkldnn.commit && \
+    echo "2604f435da7bb9f1896ae37200d91734adfdba9c" > mkldnn.commit && \
+    mkdir build && cd build && \
+    cmake -DCMAKE_INSTALL_PREFIX=/opt/caffe \
+          -DCPU_ONLY=ON \
+          -DBLAS=mkl \
+          .. && \
+    make -j$cores && \
+    make install && \
+    cp -r ${deps}/caffe/external/mkl/mklml_lnx_2018.0.20170908/* /usr/local && \
+    cp -r ${deps}/caffe/external/mkldnn/install/* /usr/local && \
+    rm -rf ${deps}/caffe
+ENV Caffe_DIR /opt/caffe
+ENV LD_LIBRARY_PATH /usr/local/lib:$LD_LIBRARY_PATH
+ENV PYTHONPATH /opt/caffe/python:${PYTHONPATH}
+
+
+WORKDIR /

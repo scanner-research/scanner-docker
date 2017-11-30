@@ -1,0 +1,36 @@
+# Scanner base GPU image for Ubuntu 16.04
+
+ARG base_tag
+FROM ${base_tag}
+MAINTAINER Will Crichton "wcrichto@cs.stanford.edu"
+ARG cores=1
+
+WORKDIR ${deps}
+
+RUN mkdir ${deps}/mkl && \
+    cd ${deps}/mkl && \
+    wget http://registrationcenter-download.intel.com/akdlm/irc_nas/tec/12414/l_mkl_2018.1.163.tgz && \
+    tar -zxf l_mkl_2018.1.163.tgz
+ADD thirdparty/mkl/silent.cfg ${deps}/mkl/silent.cfg
+RUN cd ${deps}/mkl/l_mkl_2018.1.163 && \
+    bash install.sh --cli-mode --silent ${deps}/mkl/silent.cfg && \
+    rm -rf ${deps}/mkl
+ENV LD_LIBRARY_PATH /opt/intel/mkl/lib:${LD_LIBRARY_PATH}
+
+# Caffe rc5
+RUN git clone -b rc5 https://github.com/BVLC/caffe
+ADD thirdparty/caffe/Makefile.config ${deps}/caffe/Makefile.config
+RUN cd caffe && mkdir build && cd build && \
+    cmake -DCMAKE_INSTALL_PREFIX=/opt/caffe \
+          -DBLAS=mkl \
+          -DCUDA_ARCH_NAME="Manual" \
+          -DCUDA_ARCH_BIN="30 35 50 60 61" \
+          -DCUDA_ARCH_PTX="30 35 50 60 61" \
+          .. && \
+    make install -j$cores && \
+    rm -rf ${deps}/caffe
+ENV Caffe_DIR /opt/caffe
+ENV PYTHONPATH /opt/caffe/python:${PYTHONPATH}
+
+
+WORKDIR /
